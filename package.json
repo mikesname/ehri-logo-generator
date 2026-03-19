@@ -1,0 +1,14 @@
+{
+  "name": "ehri-logo-generator",
+  "version": "1.0.0",
+  "description": "A tool to generate EHRI logos",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "opt": "svgo"
+  },
+  "author": "",
+  "license": "EUPL-1.2",
+  "devDependencies": {
+    "svgo": "^4.0.1"
+  }
+}
