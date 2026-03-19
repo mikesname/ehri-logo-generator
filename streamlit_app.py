@@ -1,9 +1,8 @@
-import streamlit as st
-import cairosvg
-
 import base64
-import re
 from pathlib import Path
+
+import cairosvg
+import streamlit as st
 from lxml import etree
 
 IMAGE_STYLES = {
