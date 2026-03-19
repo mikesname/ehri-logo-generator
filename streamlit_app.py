@@ -4,12 +4,14 @@ import cairosvg
 import base64
 import re
 from pathlib import Path
+from lxml import etree
 
 IMAGE_STYLES = {
     'Stacked': 'EHRI_stacked_main-template.svg',
     'Stacked - limited space': 'EHRI_stacked_main_ls-template.svg',
     'Inline': 'EHRI_inline_main-template.svg',
     'Inline - limited space': 'EHRI_inline_main_ls-template.svg',
+    'No Tagline': 'EHRI_no_tag-template.svg',
 }
 
 DEFAULT_COLOR = '#472c56'
@@ -49,33 +51,43 @@ DEFAULT_TRANSPARENT_BACKGROUND = {
     'Reverse': True
 }
 
-def pad_svg_viewbox(svg_str, pad_amount):
-    """
-    Expands the viewBox of an SVG string by a uniform integer amount.
-    - Decreases min-x and min-y by pad_amount.
-    - Increases width and height by 2 * pad_amount.
-    """
-    # 1. Find the viewBox attribute using a regex
-    viewbox_pattern = r'viewBox\s*=\s*["\'](-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)["\']'
-    match = re.search(viewbox_pattern, svg_str)
+def svg_update(svg_string, css_string, pad_amount):
+    parser = etree.XMLParser(remove_blank_text=True)
+    root = etree.fromstring(svg_string.encode('utf-8'), parser)
 
-    if not match:
-        return "Error: No viewBox found in SVG string."
+    viewbox_raw = root.get("viewBox")
+    if pad_amount > 0:
+        if viewbox_raw:
+            x, y, w, h = map(float, viewbox_raw.split())
 
-    # 2. Extract current coordinates (x, y, width, height)
-    x, y, w, h = map(float, match.groups())
+            new_x, new_y = x - pad_amount, y - pad_amount
+            new_w, new_h = w + (2 * pad_amount), h + (2 * pad_amount)
 
-    # 3. Calculate new padded coordinates
-    new_x = x - pad_amount
-    new_y = y - pad_amount
-    new_w = w + (pad_amount * 2)
-    new_h = h + (pad_amount * 2)
+            root.set("viewBox", f"{new_x} {new_y} {new_w} {new_h}")
+            root.set("width", str(new_w))
+            root.set("height", str(new_h))
 
-    # 4. Replace the old viewBox with the new one
-    new_viewbox_str = f'viewBox="{new_x} {new_y} {new_w} {new_h}"'
-    updated_svg = re.sub(viewbox_pattern, new_viewbox_str, svg_str)
+            # Find the element with ID 'rectbg' and set it's X and Y to negative
+            # pad_amount
+            rectbg = root.xpath(f"//*[@id='rectbg']")
+            if rectbg:
+                target = rectbg[0]
+                target.set('x', '-50%')
+                target.set('y', '-50%')
+                target.set('width', '200%')
+                target.set('height', '200%')
 
-    return updated_svg
+    # Find the element with ID 'style1' and set its CSS:
+    style1 = root.xpath(f"//*[@id='style1']")
+    if style1:
+        # root.xpath always returns a list, so we take the first match
+        target = style1[0]
+
+        # 2. Replace the text content
+        target.text = etree.CDATA(css_string)
+
+    # 5. Convert back to string
+    return etree.tostring(root, pretty_print=True, encoding='unicode')
 
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
@@ -107,26 +119,34 @@ if __name__ == "__main__":
 
         background_color = BACKGROUND_COLORS[logo_style]
 
-    edited = pad_svg_viewbox(TEMPLATE.replace('PRIMARY_COLOR', primary_color)\
-        .replace('INSERT_COLOR', insert_color)\
-        .replace('INSERT_OPACITY', str(insert_opacity))\
-                 .replace('BG_COLOR', background_color)\
-                 .replace('BG_OPACITY', str(background_opacity)), border)
+    svg_css = f"""
+        .cls-1 {{
+            display:inline;
+          fill:{primary_color};
+          fill-opacity:1;
+        }}
+        .cls-2 {{
+            fill:{insert_color};
+          fill-opacity:1;
+          opacity:{insert_opacity};
+        }}
+        .cls-bg {{
+            fill:{background_color};
+            fill-opacity:{background_opacity};
+        }}
+    """
 
+    edited = svg_update(TEMPLATE, svg_css, border)
 
-    print(edited)
+    #print(edited)
 
     b64 = base64.b64encode(edited.encode('utf-8')).decode("utf-8")
-
     background_css_class = 'checkerboard' if transparent_background else 'solid'
-
     background = f"""
             <div class="background {background_css_class}">
                 <img src="data:image/svg+xml;base64,{b64}" />
             </div>
     """
-
-
     styles = f"""
         <style>
             .solid {{
@@ -167,24 +187,27 @@ if __name__ == "__main__":
     """
 
     st.markdown(styles, unsafe_allow_html=True)
+    st.markdown("#### SVG Preview")
     st.markdown(background, unsafe_allow_html=True)
 
     st.markdown('---')
 
-    st.markdown("### Export PNG")
+    st.markdown("### Export PNG Image")
 
-    # User input for target width
     target_width = st.number_input("Target Width (px)", min_value=1, max_value=1920, value=1024)
-
-    # Perform conversion with custom width
-    # CairoSVG handles the 'auto' height for you
     png_data = cairosvg.svg2png(bytestring=edited, output_width=target_width)
-
     st.image(png_data, caption=f"Scaled to {target_width}px wide")
 
     st.download_button(
         label="Download Scaled PNG",
         data=png_data,
-        file_name=f"scaled_{target_width}px.png",
+        file_name=f"ehri-logo-{logo_style.lower()}-scaled_{target_width}px.png",
         mime="image/png"
+    )
+
+    st.download_button(
+        label="Download SVG",
+        data=edited,
+        file_name=f"ehri-logo-{logo_style.lower()}.svg",
+        mime="image/svg+xml"
     )

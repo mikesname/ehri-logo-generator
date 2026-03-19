@@ -11,24 +11,24 @@
   <defs
      id="defs35093">
     <style
-       id="style35091"><![CDATA[
+       id="style1"><![CDATA[
 .cls-1 {
   display:inline;
-  fill:PRIMARY_COLOR;
+  fill:#472c56;
   fill-opacity:1;
 }
 .cls-2 {
-  fill:INSERT_COLOR;
+  fill:#7e6b89;
   fill-opacity:1;
-  opacity:INSERT_OPACITY;
+  opacity:0.69;
 }
 .cls-bg {
-    fill:BG_COLOR;
-    fill-opacity:BG_OPACITY;
+    fill:#fff;
+    fill-opacity:0.0;
 }
 ]]></style>
   </defs>
-  <rect width="100%" height="100%" class="cls-bg" />
+  <rect id="rectbg" width="100%" height="100%" class="cls-bg" />
   <g
      id="g36439">
     <path
