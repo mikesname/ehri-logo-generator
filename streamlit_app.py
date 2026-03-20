@@ -111,7 +111,7 @@ if __name__ == "__main__":
         primary_color = COLORS[logo_style]
         opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
         solid_background = st.checkbox("Solid background", value=DEFAULT_SOLID_BACKGROUND[logo_style])
-        border = st.number_input("Border size", min_value=0, max_value=100, step=1)
+        border = st.number_input("Edge padding", min_value=0, max_value=100, step=1)
         opacity_level = 0.69 if logo_style in ['Default'] else 0.4
         insert_opacity = opacity_level if opaque_insert else 1
         insert_color = INSERT_COLORS_OPAQUE[logo_style] if opaque_insert else INSERT_COLORS[logo_style]
