@@ -43,11 +43,11 @@ BACKGROUND_COLORS = {
     'Reverse': '#000000'
 }
 
-DEFAULT_TRANSPARENT_BACKGROUND = {
-    'Default': True,
-    'Block': False,
-    'Monochrome': False,
-    'Reverse': True
+DEFAULT_SOLID_BACKGROUND = {
+    'Default': False,
+    'Block': True,
+    'Monochrome': True,
+    'Reverse': False
 }
 
 
@@ -71,8 +71,9 @@ def svg_update(svg_string, css_string, pad_amount):
             new_w, new_h = w + (2 * pad_amount), h + (2 * pad_amount)
 
             root.set("viewBox", f"{new_x} {new_y} {new_w} {new_h}")
-            root.set("width", str(new_w))
-            root.set("height", str(new_h))
+            width = float(root.get("width"))
+            new_img_h = width * (new_h / new_w)
+            root.set("height", str(new_img_h))
 
             # Find the element with ID 'rectbg' and set it's X and Y to negative
             # pad_amount
@@ -109,12 +110,12 @@ if __name__ == "__main__":
 
         primary_color = COLORS[logo_style]
         opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
-        transparent_background = st.checkbox("Transparent background", value=DEFAULT_TRANSPARENT_BACKGROUND[logo_style])
+        solid_background = st.checkbox("Solid background", value=DEFAULT_SOLID_BACKGROUND[logo_style])
         border = st.number_input("Border size", min_value=0, max_value=100, step=1)
         opacity_level = 0.69 if logo_style in ['Default'] else 0.4
         insert_opacity = opacity_level if opaque_insert else 1
         insert_color = INSERT_COLORS_OPAQUE[logo_style] if opaque_insert else INSERT_COLORS[logo_style]
-        background_opacity = 0.0 if transparent_background else 1.0
+        background_opacity = 1.0 if solid_background else 0.0
         background_color = BACKGROUND_COLORS[logo_style]
 
     svg_css = f"""
