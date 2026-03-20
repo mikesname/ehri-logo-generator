@@ -50,6 +50,12 @@ DEFAULT_TRANSPARENT_BACKGROUND = {
     'Reverse': True
 }
 
+def get_base64_image(file):
+    """Reads a file and returns its base64 string."""
+    binary_data = file.getvalue()
+    base64_data = base64.b64encode(binary_data).decode()
+    return base64_data
+
 def svg_update(svg_string, css_string, pad_amount):
     parser = etree.XMLParser(remove_blank_text=True)
     root = etree.fromstring(svg_string.encode('utf-8'), parser)
@@ -89,33 +95,31 @@ def svg_update(svg_string, css_string, pad_amount):
     return etree.tostring(root, pretty_print=True, encoding='unicode')
 
 if __name__ == "__main__":
-    st.set_page_config(layout="wide")
-    st.title("EHRI Logo Generator")
+    st.set_page_config(layout="wide", initial_sidebar_state=400)
 
     with st.sidebar as sidebar:
+        st.title("EHRI Logo Generator")
 
         image_style = st.selectbox("Choose an image style", IMAGE_STYLES.keys())
+        logo_style = st.segmented_control("Choose a colour style", COLORS.keys(), default='Default')
+        template = Path(f'variants/base/{IMAGE_STYLES[image_style]}').read_text()
 
-        logo_style = st.selectbox("Choose a colour style", COLORS.keys())
-
-        TEMPLATE = Path(f'variants/base/{IMAGE_STYLES[image_style]}').read_text()
+        preview_background = st.segmented_control("Preview background", ["Checkerboard", "Solid", "Image"], default="Checkerboard")
+        preview_img = None
+        if preview_background == "Image":
+            preview_img = st.file_uploader("Select a preview background image", ["png", "jpeg", "jpg"], max_upload_size=10)
+        preview_color = None
+        if preview_background == "Solid":
+            preview_color = st.color_picker("Select preview background colour", value=BACKGROUND_COLORS[logo_style])
 
         primary_color = COLORS[logo_style]
-
-        opaque_insert = st.checkbox("Opaque insert", value=True)
-
+        opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
         transparent_background = st.checkbox("Transparent background", value=DEFAULT_TRANSPARENT_BACKGROUND[logo_style])
-
         border = st.number_input("Border size", min_value=0, max_value=100, step=1)
-
         opacity_level = 0.69 if logo_style in ['Default'] else 0.4
-
         insert_opacity = opacity_level if opaque_insert else 1
-
         insert_color = INSERT_COLORS_OPAQUE[logo_style] if opaque_insert else INSERT_COLORS[logo_style]
-
         background_opacity = 0.0 if transparent_background else 1.0
-
         background_color = BACKGROUND_COLORS[logo_style]
 
     svg_css = f"""
@@ -135,7 +139,7 @@ if __name__ == "__main__":
         }}
     """
 
-    edited = svg_update(TEMPLATE, svg_css, border)
+    edited = svg_update(template, svg_css, border)
 
     #print(edited)
 
@@ -148,15 +152,17 @@ if __name__ == "__main__":
     """
     styles = f"""
         <style>
-            .solid {{
-                background-color: {BACKGROUND_COLORS.get(logo_style, 'none')};
-            }}
-            .checkerboard {{
+            .checkerboard,
+            img
+             {{
               background-size: 10px 10px;
               background-position: 0 0, 5px 5px;
               background-image: 
                 linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc 100%), 
                 linear-gradient(45deg, #ccc 25%, white 25%, white 75%, #ccc 75%, #ccc 100%);
+            }}
+            .solid {{
+                background-color: {BACKGROUND_COLORS.get(logo_style, 'none')};
             }}
 
             .background {{
@@ -169,11 +175,6 @@ if __name__ == "__main__":
             }}
             img {{
                 border-radius: 0 !important;
-              background-size: 10px 10px;
-              background-position: 0 0, 5px 5px;
-              background-image: 
-                linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc 100%), 
-                linear-gradient(45deg, #ccc 25%, white 25%, white 75%, #ccc 75%, #ccc 100%);
             }}
             
             .background img {{
@@ -186,6 +187,33 @@ if __name__ == "__main__":
     """
 
     st.markdown(styles, unsafe_allow_html=True)
+
+
+    if preview_img:
+        bin_str = get_base64_image(preview_img)
+        page_bg_img = f'''
+            <style>
+            .background {{
+                background-image: url("data:image/png;base64,{bin_str}");
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+            }}
+            </style>
+            '''
+        st.markdown(page_bg_img, unsafe_allow_html=True)
+    elif preview_color:
+        page_bg_color = f"""
+        <style>
+        .background {{
+            background-color: {preview_color};
+            background-image: none;
+        }}
+        </style>
+        """
+        st.markdown(page_bg_color, unsafe_allow_html=True)
+
+
     st.markdown("#### SVG Preview")
     st.markdown(background, unsafe_allow_html=True)
 
