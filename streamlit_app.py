@@ -50,11 +50,13 @@ DEFAULT_TRANSPARENT_BACKGROUND = {
     'Reverse': True
 }
 
+
 def get_base64_image(file):
     """Reads a file and returns its base64 string."""
     binary_data = file.getvalue()
     base64_data = base64.b64encode(binary_data).decode()
     return base64_data
+
 
 def svg_update(svg_string, css_string, pad_amount):
     parser = etree.XMLParser(remove_blank_text=True)
@@ -94,6 +96,7 @@ def svg_update(svg_string, css_string, pad_amount):
     # 5. Convert back to string
     return etree.tostring(root, pretty_print=True, encoding='unicode')
 
+
 if __name__ == "__main__":
     st.set_page_config(layout="wide", initial_sidebar_state=400)
 
@@ -103,14 +106,6 @@ if __name__ == "__main__":
         image_style = st.selectbox("Choose an image style", IMAGE_STYLES.keys())
         logo_style = st.segmented_control("Choose a colour style", COLORS.keys(), default='Default')
         template = Path(f'variants/base/{IMAGE_STYLES[image_style]}').read_text()
-
-        preview_background = st.segmented_control("Preview background", ["Checkerboard", "Solid", "Image"], default="Checkerboard")
-        preview_img = None
-        if preview_background == "Image":
-            preview_img = st.file_uploader("Select a preview background image", ["png", "jpeg", "jpg"], max_upload_size=10)
-        preview_color = None
-        if preview_background == "Solid":
-            preview_color = st.color_picker("Select preview background colour", value=BACKGROUND_COLORS[logo_style])
 
         primary_color = COLORS[logo_style]
         opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
@@ -141,10 +136,22 @@ if __name__ == "__main__":
 
     edited = svg_update(template, svg_css, border)
 
-    #print(edited)
+    # print(edited)
+    st.markdown("#### SVG Preview")
+    col1, col2 = st.columns([0.2, 0.8], gap=None)
+
+    preview_background = col2.segmented_control("Preview background", ["Checkerboard", "Solid", "Image"],
+                                                default="Checkerboard")
+    preview_img = None
+    if preview_background == "Image":
+        preview_img = col2.file_uploader("Select a preview background image", ["png", "jpeg", "jpg"],
+                                         max_upload_size=10)
+    preview_color = None
+    if preview_background == "Solid":
+        preview_color = col2.color_picker("Select preview background colour", value=BACKGROUND_COLORS[logo_style])
 
     b64 = base64.b64encode(edited.encode('utf-8')).decode("utf-8")
-    background_css_class = 'checkerboard' if transparent_background else 'solid'
+    background_css_class = 'checkerboard'
     background = f"""
             <div class="background {background_css_class}">
                 <img src="data:image/svg+xml;base64,{b64}" />
@@ -160,9 +167,6 @@ if __name__ == "__main__":
               background-image: 
                 linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc 100%), 
                 linear-gradient(45deg, #ccc 25%, white 25%, white 75%, #ccc 75%, #ccc 100%);
-            }}
-            .solid {{
-                background-color: {BACKGROUND_COLORS.get(logo_style, 'none')};
             }}
 
             .background {{
@@ -188,7 +192,6 @@ if __name__ == "__main__":
 
     st.markdown(styles, unsafe_allow_html=True)
 
-
     if preview_img:
         bin_str = get_base64_image(preview_img)
         page_bg_img = f'''
@@ -213,26 +216,25 @@ if __name__ == "__main__":
         """
         st.markdown(page_bg_color, unsafe_allow_html=True)
 
-
-    st.markdown("#### SVG Preview")
-    st.markdown(background, unsafe_allow_html=True)
+    col1.markdown(background, unsafe_allow_html=True)
 
     st.markdown('---')
-
     st.markdown("### Export PNG Image")
 
-    target_width = st.number_input("Target Width (px)", min_value=1, max_value=1920, value=1024)
-    png_data = cairosvg.svg2png(bytestring=edited, output_width=target_width)
-    st.image(png_data, caption=f"Scaled to {target_width}px wide")
+    export_col1, export_col2 = st.columns(2)
 
-    st.download_button(
+    target_width = export_col2.number_input("Target Width (px)", min_value=1, max_value=1920, value=1024)
+    png_data = cairosvg.svg2png(bytestring=edited, output_width=target_width)
+    export_col1.image(png_data, caption=f"Scaled to {target_width}px wide")
+
+    export_col2.download_button(
         label="Download Scaled PNG",
         data=png_data,
         file_name=f"ehri-logo-{logo_style.lower()}-scaled_{target_width}px.png",
         mime="image/png"
     )
 
-    st.download_button(
+    export_col2.download_button(
         label="Download SVG",
         data=edited,
         file_name=f"ehri-logo-{logo_style.lower()}.svg",
