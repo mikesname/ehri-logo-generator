@@ -98,7 +98,7 @@ def svg_update(svg_string, css_string, pad_amount):
 
 
 if __name__ == "__main__":
-    st.set_page_config(layout="wide", initial_sidebar_state=400)
+    st.set_page_config(layout="wide", initial_sidebar_state=400, page_title="EHRI Logo Generator")
 
     with st.sidebar as sidebar:
         st.title("EHRI Logo Generator")
