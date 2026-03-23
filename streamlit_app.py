@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # print(edited)
     st.markdown("#### SVG Preview")
-    col1, col2 = st.columns([0.2, 0.8], gap=None)
+    col1, col2 = st.columns([0.4, 0.6], gap=None)
 
     preview_background = col2.segmented_control("Preview background", ["Checkerboard", "Solid", "Image"],
                                                 default="Checkerboard")
