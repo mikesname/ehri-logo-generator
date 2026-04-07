@@ -58,32 +58,36 @@ def get_base64_image(file):
     return base64_data
 
 
-def svg_update(svg_string, css_string, pad_amount):
+def svg_update(svg_string, css_string, pad_amount: int, square: bool):
     parser = etree.XMLParser(remove_blank_text=True)
     root = etree.fromstring(svg_string.encode('utf-8'), parser)
 
     viewbox_raw = root.get("viewBox")
-    if pad_amount > 0:
-        if viewbox_raw:
-            x, y, w, h = map(float, viewbox_raw.split())
+    if viewbox_raw:
+        x, y, w, h = map(float, viewbox_raw.split())
 
-            new_x, new_y = x - pad_amount, y - pad_amount
-            new_w, new_h = w + (2 * pad_amount), h + (2 * pad_amount)
+        new_x = x - pad_amount
+        new_w = w + (2 * pad_amount)
 
-            root.set("viewBox", f"{new_x} {new_y} {new_w} {new_h}")
-            width = float(root.get("width"))
-            new_img_h = width * (new_h / new_w)
-            root.set("height", str(new_img_h))
+        new_y = -((new_w - h) / 2) if square else y - pad_amount
+        new_h = new_w if square else h + (2 * pad_amount)
 
-            # Find the element with ID 'rectbg' and set it's X and Y to negative
-            # pad_amount
-            rectbg = root.xpath(f"//*[@id='rectbg']")
-            if rectbg:
-                target = rectbg[0]
-                target.set('x', '-50%')
-                target.set('y', '-50%')
-                target.set('width', '200%')
-                target.set('height', '200%')
+        root.set("viewBox", f"{new_x} {new_y} {new_w} {new_h}")
+        width = float(root.get("width"))
+        new_img_h = width if square else width * (new_h / new_w)
+        root.set("height", str(new_img_h))
+
+        st.write("X: {}, Y: {}, W: {}, H: {}".format(new_x, new_y, new_w, new_h))
+
+        # Find the element with ID 'rectbg' and set it's X and Y to negative
+        # pad_amount
+        rectbg = root.xpath(f"//*[@id='rectbg']")
+        if rectbg:
+            target = rectbg[0]
+            target.set('x', '-50%')
+            target.set('y', '-50%')
+            target.set('width', '200%')
+            target.set('height', '200%')
 
     # Find the element with ID 'style1' and set its CSS:
     style1 = root.xpath(f"//*[@id='style1']")
@@ -112,6 +116,7 @@ if __name__ == "__main__":
         opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
         solid_background = st.checkbox("Solid background", value=DEFAULT_SOLID_BACKGROUND[logo_style])
         border = st.number_input("Edge padding", min_value=0, max_value=100, step=1)
+        square = st.checkbox("Square")
         opacity_level = 0.69 if logo_style in ['Default'] else 0.4
         insert_opacity = opacity_level if opaque_insert else 1
         insert_color = INSERT_COLORS_OPAQUE[logo_style] if opaque_insert else INSERT_COLORS[logo_style]
@@ -135,7 +140,7 @@ if __name__ == "__main__":
         }}
     """
 
-    edited = svg_update(template, svg_css, border)
+    edited = svg_update(template, svg_css, border, square)
 
     # print(edited)
     st.markdown("#### SVG Preview")
@@ -174,7 +179,7 @@ if __name__ == "__main__":
                 display: flex;
                 flex-direction: row;
                 width: 350px;
-                height: 250px;
+                height: 350px;
                 align-items: center;
                 justify-content: center;
             }}
