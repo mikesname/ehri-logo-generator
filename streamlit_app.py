@@ -77,7 +77,7 @@ def svg_update(svg_string, css_string, pad_amount: int, square: bool):
         new_img_h = width if square else width * (new_h / new_w)
         root.set("height", str(new_img_h))
 
-        st.write("X: {}, Y: {}, W: {}, H: {}".format(new_x, new_y, new_w, new_h))
+        #st.write("X: {}, Y: {}, W: {}, H: {}".format(new_x, new_y, new_w, new_h))
 
         # Find the element with ID 'rectbg' and set it's X and Y to negative
         # pad_amount
@@ -115,8 +115,8 @@ if __name__ == "__main__":
         primary_color = COLORS[logo_style]
         opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
         solid_background = st.checkbox("Solid background", value=DEFAULT_SOLID_BACKGROUND[logo_style])
+        square = st.checkbox("Square proportions")
         border = st.number_input("Edge padding", min_value=0, max_value=100, step=1)
-        square = st.checkbox("Square")
         opacity_level = 0.69 if logo_style in ['Default'] else 0.4
         insert_opacity = opacity_level if opaque_insert else 1
         insert_color = INSERT_COLORS_OPAQUE[logo_style] if opaque_insert else INSERT_COLORS[logo_style]
@@ -156,6 +156,9 @@ if __name__ == "__main__":
     if preview_background == "Solid":
         preview_color = col2.color_picker("Select preview background colour", value=BACKGROUND_COLORS[logo_style])
 
+    preview_x_dim = 350
+    preview_y_dim = preview_x_dim if square else 250
+
     b64 = base64.b64encode(edited.encode('utf-8')).decode("utf-8")
     background_css_class = 'checkerboard'
     background = f"""
@@ -178,8 +181,8 @@ if __name__ == "__main__":
             .background {{
                 display: flex;
                 flex-direction: row;
-                width: 350px;
-                height: 350px;
+                width: {preview_x_dim}px;
+                height: {preview_y_dim}px;
                 align-items: center;
                 justify-content: center;
             }}
