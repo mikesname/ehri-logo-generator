@@ -14,6 +14,7 @@ IMAGE_STYLES = {
 }
 
 DEFAULT_COLOR = '#472c56'
+BEIGE_COLOR = '#D5D2B8'
 
 COLORS = {
     'Default': DEFAULT_COLOR,
@@ -110,9 +111,18 @@ if __name__ == "__main__":
 
         image_style = st.selectbox("Choose an image style", IMAGE_STYLES.keys())
         logo_style = st.segmented_control("Choose a colour style", COLORS.keys(), default='Default')
+        if logo_style is None:
+            logo_style = 'Default'
         template = Path(f'variants/base/{IMAGE_STYLES[image_style]}').read_text()
 
+        beige = False
+        if logo_style == 'Reverse':
+            beige = st.checkbox('Beige style (for NN footer)')
+
         primary_color = COLORS[logo_style]
+        if beige:
+            primary_color = BEIGE_COLOR
+
         opaque_insert = st.checkbox("Semi-opaque letter insert", value=True)
         solid_background = st.checkbox("Solid background", value=DEFAULT_SOLID_BACKGROUND[logo_style])
         square = st.checkbox("Square proportions")
